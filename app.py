@@ -3,8 +3,6 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_community.retrievers import BM25Retriever
-from langchain_community.retrievers.ensemble import EnsembleRetriever
 from groq import Groq
 from datetime import datetime
 import tempfile
@@ -13,7 +11,6 @@ import os
 st.set_page_config(page_title="RAGify", page_icon="📄", layout="wide")
 
 st.markdown('<style>.main{background:#f8f9fa}.stButton button{border-radius:20px}</style>', unsafe_allow_html=True)
-
 st.markdown('<div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:2rem;border-radius:15px;text-align:center;color:white;margin-bottom:2rem"><h1>📄 RAGify</h1><p>Intelligent Document Q&A — Powered by Groq + LLaMA 3</p></div>', unsafe_allow_html=True)
 
 for key in ["chat_history","vectorstore","summary","total_chunks","client","all_chunks"]:
@@ -30,11 +27,9 @@ with st.sidebar:
         st.success("✅ Connected!")
     else:
         st.warning("⚠️ Enter Groq API Key")
-
     st.markdown("---")
     st.markdown("## 📁 Upload Documents")
     uploaded_files = st.file_uploader("Choose PDF files", type=["pdf"], accept_multiple_files=True)
-
     if uploaded_files and groq_key:
         if st.button("🚀 Process Documents", type="primary", use_container_width=True):
             with st.spinner("⏳ Processing..."):
@@ -49,13 +44,11 @@ with st.sidebar:
                     chunks = splitter.split_documents(docs)
                     all_chunks.extend(chunks)
                     os.unlink(tmp_path)
-
                 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
                 vectorstore = FAISS.from_documents(all_chunks, embeddings)
                 st.session_state.vectorstore = vectorstore
                 st.session_state.all_chunks = all_chunks
                 st.session_state.total_chunks = len(all_chunks)
-
                 sample = " ".join([c.page_content for c in all_chunks[:5]])
                 resp = st.session_state.client.chat.completions.create(
                     model="llama-3.1-8b-instant",
@@ -66,18 +59,7 @@ with st.sidebar:
                 st.session_state.chat_history = []
             st.success("✅ " + str(len(all_chunks)) + " chunks ready!")
             st.rerun()
-
     if st.session_state.vectorstore:
         st.markdown("---")
         st.markdown("## 📊 Stats")
-        st.metric("Chunks Indexed", st.session_state.total_chunks)
-        st.metric("Questions Asked", len(st.session_state.chat_history))
-        st.markdown("---")
-        if st.button("📥 Export Chat", use_container_width=True):
-            if st.session_state.chat_history:
-                export_text = "RAGify Chat Export\n" + "="*50 + "\n\n"
-                for i, item in enumerate(st.session_state.chat_history, 1):
-                    export_text += "Q" + str(i) + ": " + item["question"] + "\n"
-                    export_text += "A: " + item["answer"] + "\n"
-                    export_text += "Confidence: " + item["confidence"] + "\n"
-                    export_text += "-"*30 + "\n\n"
+        st.metric("Chunks Indexed",
