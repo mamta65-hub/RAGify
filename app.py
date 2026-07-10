@@ -62,5 +62,5 @@ with st.sidebar:
     if st.session_state.vectorstore:
         st.markdown("---")
         st.markdown("## 📊 Stats")
-        st.metric("Chunks Indexed",st.session_state.total_chunks
+        st.metric("Chunks Indexed",st.session_state.total_chunks)
         st.metric("Questions Asked",len(st.session_state.chat_history))
