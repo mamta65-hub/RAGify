@@ -5,30 +5,24 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from groq import Groq
 from datetime import datetime
+from streamlit_mic_recorder import mic_recorder
 import tempfile
 import os
-import random
-from streamlit_mic_recorder import mic_recorder
-import base64
 
 st.set_page_config(page_title="RAGify", page_icon="📄", layout="wide")
 
-# Dark Mode CSS
 def get_css(dark_mode):
     if dark_mode:
-        return """
-<style>
+        return """<style>
 .stApp {background:#1a1a2e;color:#e0e0e0}
 .stSidebar {background:#16213e}
 .main-header {background:linear-gradient(135deg,#667eea,#764ba2);padding:2rem;border-radius:15px;text-align:center;color:white;margin-bottom:2rem}
 .chat-user {background:#667eea;color:white;padding:0.8rem 1.2rem;border-radius:18px 18px 4px 18px;margin:0.5rem 0;max-width:80%;margin-left:auto;text-align:right}
 .chat-bot {background:#2d2d44;color:#e0e0e0;padding:0.8rem 1.2rem;border-radius:18px 18px 18px 4px;margin:0.5rem 0;max-width:80%;border:1px solid #444}
 .source-box {background:#252540;padding:0.5rem 0.8rem;border-radius:8px;border-left:4px solid #667eea;font-size:0.8rem;color:#aaa;margin-bottom:1rem}
-.feature-card {background:#2d2d44;padding:1rem;border-radius:10px;text-align:center;margin:0.5rem}
 </style>"""
     else:
-        return """
-<style>
+        return """<style>
 .stApp {background:#f8f9fa}
 .main-header {background:linear-gradient(135deg,#667eea,#764ba2);padding:2rem;border-radius:15px;text-align:center;color:white;margin-bottom:2rem}
 .chat-user {background:#667eea;color:white;padding:0.8rem 1.2rem;border-radius:18px 18px 4px 18px;margin:0.5rem 0;max-width:80%;margin-left:auto;text-align:right}
@@ -36,42 +30,32 @@ def get_css(dark_mode):
 .source-box {background:#f8f9fa;padding:0.5rem 0.8rem;border-radius:8px;border-left:4px solid #667eea;font-size:0.8rem;color:#666;margin-bottom:1rem}
 </style>"""
 
-# Session State Init
-for key in ["chat_history","vectorstore","summary","total_chunks","client","all_chunks","dark_mode","answer_lang","active_tab"]:
+for key in ["chat_history","vectorstore","summary","total_chunks","client","all_chunks","dark_mode","answer_lang"]:
     if key not in st.session_state:
         if key == "chat_history": st.session_state[key] = []
         elif key == "all_chunks": st.session_state[key] = []
         elif key == "dark_mode": st.session_state[key] = False
         elif key == "answer_lang": st.session_state[key] = "English"
-        elif key == "active_tab": st.session_state[key] = "chat"
         elif key == "total_chunks": st.session_state[key] = 0
         else: st.session_state[key] = None
 
 st.markdown(get_css(st.session_state.dark_mode), unsafe_allow_html=True)
 st.markdown('<div class="main-header"><h1>📄 RAGify</h1><p>Intelligent Document Q&A — Powered by Groq + LLaMA 3</p></div>', unsafe_allow_html=True)
 
-# Sidebar
 with st.sidebar:
     st.markdown("## ⚙️ Settings")
-
-    # Dark Mode Toggle
     dark = st.toggle("🌙 Dark Mode", value=st.session_state.dark_mode)
     if dark != st.session_state.dark_mode:
         st.session_state.dark_mode = dark
         st.rerun()
-
-    # Language Selection
     lang = st.selectbox("🌐 Answer Language", ["English", "Hindi", "Hinglish"])
     st.session_state.answer_lang = lang
-
-    # Model Selection
     model = st.selectbox("🤖 LLM Model", [
         "llama-3.1-8b-instant",
         "llama-3.3-70b-versatile",
         "gemma2-9b-it",
         "mixtral-8x7b-32768"
     ])
-
     st.markdown("---")
     groq_key = st.text_input("🔑 Groq API Key", type="password", placeholder="gsk_...")
     if groq_key:
@@ -79,11 +63,9 @@ with st.sidebar:
         st.success("✅ Connected!")
     else:
         st.warning("⚠️ Enter Groq API Key")
-
     st.markdown("---")
     st.markdown("## 📁 Upload Documents")
     uploaded_files = st.file_uploader("Choose PDF files", type=["pdf"], accept_multiple_files=True)
-
     if uploaded_files and groq_key:
         if st.button("🚀 Process Documents", type="primary", use_container_width=True):
             with st.spinner("⏳ Processing..."):
@@ -102,7 +84,6 @@ with st.sidebar:
                         st.error("Error: " + str(e))
                     finally:
                         os.unlink(tmp_path)
-
                 if all_chunks:
                     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
                     vectorstore = FAISS.from_documents(all_chunks, embeddings)
@@ -119,9 +100,8 @@ with st.sidebar:
                     st.session_state.chat_history = []
                     st.success("✅ " + str(len(all_chunks)) + " chunks ready!")
                 else:
-                    st.error("No text found! Try another PDF.")
+                    st.error("No text found!")
             st.rerun()
-
     if st.session_state.vectorstore:
         st.markdown("---")
         st.markdown("## 📊 Stats")
@@ -141,36 +121,35 @@ with st.sidebar:
             st.session_state.chat_history = []
             st.rerun()
 
-# Main Area
 if not st.session_state.vectorstore:
     c1, c2, c3 = st.columns(3)
-    with c1: st.info("**Step 1**\n\n🔑 Enter Groq API Key")
-    with c2: st.info("**Step 2**\n\n📁 Upload PDF files")
-    with c3: st.info("**Step 3**\n\n💬 Ask questions!")
+    with c1:
+        st.info("**Step 1**\n\n🔑 Enter Groq API Key")
+    with c2:
+        st.info("**Step 2**\n\n📁 Upload PDF files")
+    with c3:
+        st.info("**Step 3**\n\n💬 Ask questions!")
     st.markdown("---")
     st.markdown("### ✨ Pro Features")
     f1, f2, f3, f4, f5 = st.columns(5)
     with f1: st.success("🔍 Hybrid Search")
     with f2: st.success("🧠 Memory")
-    with f3: st.success("📊 Confidence")
-    with f4: st.success("🌙 Dark Mode")
-    with f5: st.success("🌐 Multi-Lang")
+    with f3: st.success("🌙 Dark Mode")
+    with f4: st.success("🎤 Voice Input")
+    with f5: st.success("📋 Copy Answer")
     f6, f7, f8, f9, f10 = st.columns(5)
     with f6: st.success("📝 Quiz Gen")
     with f7: st.success("🃏 Flashcards")
     with f8: st.success("🤖 Multi-Model")
-    with f9: st.success("📥 Export Chat")
-    with f10: st.success("💬 Chat History")
-
+    with f9: st.success("🌐 Multi-Lang")
+    with f10: st.success("📥 Export Chat")
 else:
     if st.session_state.summary:
         with st.expander("📋 Document Summary", expanded=False):
             st.write(st.session_state.summary)
 
-    # Tabs
     tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📝 Quiz Generator", "🃏 Flashcards", "📊 Model Comparison"])
 
-    # ── TAB 1: CHAT ──
     with tab1:
         st.markdown("### 💬 Conversation")
         for item in st.session_state.chat_history:
@@ -183,35 +162,82 @@ else:
 
         st.markdown("---")
         col_voice, col_text, col_btn = st.columns([1, 4, 1])
-
         with col_voice:
-            audio = mic_recorder(
-                start_prompt="🎤",
-                stop_prompt="⏹️",
-                key="mic"
-            )
-
+            audio = mic_recorder(start_prompt="🎤 Record", stop_prompt="⏹️ Stop", key="mic")
         with col_text:
-            question = st.text_input("", placeholder="Ask anything or use mic...", label_visibility="collapsed")
-
+            question = st.text_input("", placeholder="Ask anything or use mic above...", label_visibility="collapsed", key="text_input")
         with col_btn:
             ask = st.button("Ask 🔍", type="primary", use_container_width=True)
 
-        if audio:
-            st.info("🎤 Voice recorded! Processing...")
-            audio_client = Groq(api_key=groq_key)
-            transcription = audio_client.audio.transcriptions.create(
-                file=("audio.wav", audio['bytes'], "audio/wav"),
-                model="whisper-large-v3",
-            )
-            question = transcription.text
-            st.success("Transcribed: " + question)
-        else:
-            pass
-            
-        if ask and question and st.session_state.client:
+        voice_question = None
+        if audio is not None:
+            if groq_key:
+                with st.spinner("🎤 Transcribing voice..."):
+                    try:
+                        audio_client = Groq(api_key=groq_key)
+                        transcription = audio_client.audio.transcriptions.create(
+                            file=("audio.wav", audio['bytes'], "audio/wav"),
+                            model="whisper-large-v3",
+                        )
+                        voice_question = transcription.text
+                        st.success("📝 Voice: " + voice_question)
+                    except Exception as e:
+                        st.error("Voice error: " + str(e))
 
-    # ── TAB 2: QUIZ GENERATOR ──
+        final_question = voice_question if voice_question else question
+
+        if (ask or voice_question) and final_question and st.session_state.client:
+            with st.spinner("🤖 Thinking..."):
+                semantic_docs = st.session_state.vectorstore.similarity_search(final_question, k=3)
+                question_words = set(final_question.lower().split())
+                bm25_scores = []
+                for chunk in st.session_state.all_chunks:
+                    words = set(chunk.page_content.lower().split())
+                    score = len(question_words & words)
+                    bm25_scores.append((score, chunk))
+                bm25_scores.sort(key=lambda x: x[0], reverse=True)
+                bm25_docs = [doc for _, doc in bm25_scores[:3]]
+                seen = set()
+                docs = []
+                for doc in semantic_docs + bm25_docs:
+                    if doc.page_content not in seen:
+                        seen.add(doc.page_content)
+                        docs.append(doc)
+                docs = docs[:4]
+                score_docs = st.session_state.vectorstore.similarity_search_with_score(final_question, k=3)
+                scores = [s for _, s in score_docs]
+                avg = sum(scores) / len(scores)
+                confidence = "High" if avg < 0.3 else "Medium" if avg < 0.6 else "Low"
+                memory_context = ""
+                if st.session_state.chat_history:
+                    for item in st.session_state.chat_history[-3:]:
+                        memory_context += "Q: " + item["question"] + "\nA: " + item["answer"] + "\n\n"
+                context = "\n\n".join([d.page_content for d in docs])
+                lang_instruction = ""
+                if st.session_state.answer_lang == "Hindi":
+                    lang_instruction = "Answer in Hindi language only. "
+                elif st.session_state.answer_lang == "Hinglish":
+                    lang_instruction = "Answer in Hinglish (mix of Hindi and English). "
+                prompt = lang_instruction + "Previous conversation:\n" + memory_context + "\nDocument context:\n" + context + "\n\nQuestion: " + final_question + "\nAnswer:"
+                response = st.session_state.client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant. Answer based on document context only."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3,
+                    max_tokens=400
+                )
+                answer = response.choices[0].message.content
+                st.session_state.chat_history.append({
+                    "question": final_question,
+                    "answer": answer,
+                    "confidence": confidence,
+                    "source": docs[0].page_content[:250],
+                    "time": datetime.now().strftime("%H:%M")
+                })
+                st.rerun()
+
     with tab2:
         st.markdown("### 📝 Quiz Generator")
         st.write("Generate MCQ questions from your document!")
@@ -229,7 +255,6 @@ else:
                 st.text_area("Quiz Questions", quiz, height=400)
                 st.download_button("📥 Download Quiz", quiz, "ragify_quiz.txt")
 
-    # ── TAB 3: FLASHCARDS ──
     with tab3:
         st.markdown("### 🃏 Flashcard Generator")
         st.write("Generate study flashcards from your document!")
@@ -255,13 +280,12 @@ else:
                             st.success("**Back:** " + back)
                 st.download_button("📥 Download Flashcards", flashcards_text, "ragify_flashcards.txt")
 
-    # ── TAB 4: MODEL COMPARISON ──
     with tab4:
         st.markdown("### 📊 Model Comparison")
         st.write("Compare different AI models on the same question!")
         compare_q = st.text_input("Enter question to compare:", placeholder="What is binary search?")
         models_to_compare = st.multiselect(
-            "Select models to compare:",
+            "Select models:",
             ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it", "mixtral-8x7b-32768"],
             default=["llama-3.1-8b-instant", "gemma2-9b-it"]
         )
