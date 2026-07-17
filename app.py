@@ -206,7 +206,9 @@ else:
             )
             question = transcription.text
             st.success("Transcribed: " + question)
-
+        else:
+            pass
+            
         if ask and question and st.session_state.client:
 
     # ── TAB 2: QUIZ GENERATOR ──
