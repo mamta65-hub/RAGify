@@ -177,98 +177,37 @@ else:
             st.markdown('<div class="chat-user">❓ ' + item["question"] + '</div>', unsafe_allow_html=True)
             conf_color = "green" if item["confidence"] == "High" else "orange" if item["confidence"] == "Medium" else "red"
             st.markdown('<div class="chat-bot">🤖 ' + item["answer"] + '<br><small style="color:' + conf_color + '">Confidence: ' + item["confidence"] + ' | ' + item["time"] + '</small></div>', unsafe_allow_html=True)
-            col_src, col_copy = st.columns([4, 1])
-            with col_src:
-                st.markdown('<div class="source-box">📄 ' + item["source"] + '...</div>', unsafe_allow_html=True)
-           with col_copy:
-           with st.expander("📋"):
+            with st.expander("📋 Copy Answer"):
                 st.code(item["answer"], language=None)
-                st.markdown("---")
-       # Voice Input
-st.markdown("#### 🎤 Voice or Text Input")
-col_voice, col_text, col_btn = st.columns([1, 4, 1])
+            st.markdown('<div class="source-box">📄 ' + item["source"] + '...</div>', unsafe_allow_html=True)
 
-with col_voice:
-    audio = mic_recorder(
-        start_prompt="🎤",
-        stop_prompt="⏹️",
-        key="mic"
-    )
+        st.markdown("---")
+        col_voice, col_text, col_btn = st.columns([1, 4, 1])
 
-with col_text:
-    question = st.text_input("", placeholder="Ask anything or use mic...", label_visibility="collapsed")
+        with col_voice:
+            audio = mic_recorder(
+                start_prompt="🎤",
+                stop_prompt="⏹️",
+                key="mic"
+            )
 
-with col_btn:
-    ask = st.button("Ask 🔍", type="primary", use_container_width=True)
+        with col_text:
+            question = st.text_input("", placeholder="Ask anything or use mic...", label_visibility="collapsed")
 
-# Voice to text
-if audio:
-    st.info("🎤 Voice recorded! Processing...")
-    import groq as groq_module
-    audio_client = groq_module.Groq(api_key=groq_key)
-    transcription = audio_client.audio.transcriptions.create(
-        file=("audio.wav", audio['bytes'], "audio/wav"),
-        model="whisper-large-v3",
-    )
-    question = transcription.text
-    st.success("📝 Transcribed: " + question)
+        with col_btn:
+            ask = st.button("Ask 🔍", type="primary", use_container_width=True)
+
+        if audio:
+            st.info("🎤 Voice recorded! Processing...")
+            audio_client = Groq(api_key=groq_key)
+            transcription = audio_client.audio.transcriptions.create(
+                file=("audio.wav", audio['bytes'], "audio/wav"),
+                model="whisper-large-v3",
+            )
+            question = transcription.text
+            st.success("Transcribed: " + question)
+
         if ask and question and st.session_state.client:
-            with st.spinner("🤖 Thinking..."):
-                semantic_docs = st.session_state.vectorstore.similarity_search(question, k=3)
-                question_words = set(question.lower().split())
-                bm25_scores = []
-                for chunk in st.session_state.all_chunks:
-                    words = set(chunk.page_content.lower().split())
-                    score = len(question_words & words)
-                    bm25_scores.append((score, chunk))
-                bm25_scores.sort(key=lambda x: x[0], reverse=True)
-                bm25_docs = [doc for _, doc in bm25_scores[:3]]
-                seen = set()
-                docs = []
-                for doc in semantic_docs + bm25_docs:
-                    if doc.page_content not in seen:
-                        seen.add(doc.page_content)
-                        docs.append(doc)
-                docs = docs[:4]
-
-                score_docs = st.session_state.vectorstore.similarity_search_with_score(question, k=3)
-                scores = [s for _, s in score_docs]
-                avg = sum(scores) / len(scores)
-                confidence = "High" if avg < 0.3 else "Medium" if avg < 0.6 else "Low"
-
-                memory_context = ""
-                if st.session_state.chat_history:
-                    for item in st.session_state.chat_history[-3:]:
-                        memory_context += "Q: " + item["question"] + "\nA: " + item["answer"] + "\n\n"
-
-                context = "\n\n".join([d.page_content for d in docs])
-
-                lang_instruction = ""
-                if st.session_state.answer_lang == "Hindi":
-                    lang_instruction = "Answer in Hindi language only. "
-                elif st.session_state.answer_lang == "Hinglish":
-                    lang_instruction = "Answer in Hinglish (mix of Hindi and English). "
-
-                prompt = lang_instruction + "Previous conversation:\n" + memory_context + "\nDocument context:\n" + context + "\n\nQuestion: " + question + "\nAnswer:"
-
-                response = st.session_state.client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant. Answer based on document context only. Remember previous conversation."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.3,
-                    max_tokens=400
-                )
-                answer = response.choices[0].message.content
-                st.session_state.chat_history.append({
-                    "question": question,
-                    "answer": answer,
-                    "confidence": confidence,
-                    "source": docs[0].page_content[:250],
-                    "time": datetime.now().strftime("%H:%M")
-                })
-                st.rerun()
 
     # ── TAB 2: QUIZ GENERATOR ──
     with tab2:
