@@ -8,6 +8,8 @@ from datetime import datetime
 import tempfile
 import os
 import random
+from streamlit_mic_recorder import mic_recorder
+import base64
 
 st.set_page_config(page_title="RAGify", page_icon="📄", layout="wide")
 
@@ -178,16 +180,38 @@ else:
             col_src, col_copy = st.columns([4, 1])
             with col_src:
                 st.markdown('<div class="source-box">📄 ' + item["source"] + '...</div>', unsafe_allow_html=True)
-            with col_copy:
-                st.button("📋 Copy", key="copy_" + str(item["time"]), help="Copy answer")
+           with col_copy:
+           with st.expander("📋"):
+                st.code(item["answer"], language=None)
+                st.markdown("---")
+       # Voice Input
+st.markdown("#### 🎤 Voice or Text Input")
+col_voice, col_text, col_btn = st.columns([1, 4, 1])
 
-        st.markdown("---")
-        col1, col2 = st.columns([5, 1])
-        with col1:
-            question = st.text_input("", placeholder="Ask anything about your document...", label_visibility="collapsed")
-        with col2:
-            ask = st.button("Ask 🔍", type="primary", use_container_width=True)
+with col_voice:
+    audio = mic_recorder(
+        start_prompt="🎤",
+        stop_prompt="⏹️",
+        key="mic"
+    )
 
+with col_text:
+    question = st.text_input("", placeholder="Ask anything or use mic...", label_visibility="collapsed")
+
+with col_btn:
+    ask = st.button("Ask 🔍", type="primary", use_container_width=True)
+
+# Voice to text
+if audio:
+    st.info("🎤 Voice recorded! Processing...")
+    import groq as groq_module
+    audio_client = groq_module.Groq(api_key=groq_key)
+    transcription = audio_client.audio.transcriptions.create(
+        file=("audio.wav", audio['bytes'], "audio/wav"),
+        model="whisper-large-v3",
+    )
+    question = transcription.text
+    st.success("📝 Transcribed: " + question)
         if ask and question and st.session_state.client:
             with st.spinner("🤖 Thinking..."):
                 semantic_docs = st.session_state.vectorstore.similarity_search(question, k=3)
