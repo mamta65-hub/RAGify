@@ -8,3 +8,5 @@ pymupdf
 pypdf
 groq
 python-dotenv
+streamlit-mic-recorder
+pyperclip
