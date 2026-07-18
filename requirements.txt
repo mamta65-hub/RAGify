@@ -9,6 +9,7 @@ pypdf
 groq
 python-dotenv
 streamlit-mic-recorder
+torchvision
 pytesseract
 Pillow
 pdf2image
