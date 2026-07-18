@@ -90,7 +90,7 @@ def extract_text_from_url(url):
 # Process Documents Function
 def process_documents(files=None, urls=None, use_ocr=False):
     all_chunks = []
-    from langchain.schema import Document
+    from langchain_core.documents import Document
 
     if files:
         for f in files:
