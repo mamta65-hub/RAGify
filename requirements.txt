@@ -9,4 +9,9 @@ pypdf
 groq
 python-dotenv
 streamlit-mic-recorder
-pyperclip
+pytesseract
+Pillow
+pdf2image
+tabula-py
+requests
+beautifulsoup4
