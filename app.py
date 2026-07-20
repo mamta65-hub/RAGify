@@ -37,7 +37,15 @@ authenticator = stauth.Authenticate(
     users["cookie"]["expiry_days"]
 )
 
-name, authentication_status, username = authenticator.login(location="main")
+auth_result = authenticator.login(location="main")
+if auth_result is not None:
+    name = auth_result.get("name", "")
+    authentication_status = auth_result.get("authentication_status", None)
+    username = auth_result.get("username", "")
+else:
+    name = None
+    authentication_status = None
+    username = None
 
 if authentication_status == False:
     st.error("❌ Username/Password galat hai!")
