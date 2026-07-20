@@ -180,6 +180,27 @@ with st.sidebar:
         "mixtral-8x7b-32768"
     ])
     st.markdown("---")
+    # Domain Selection
+    st.markdown("---")
+    st.markdown("## 🎯 Domain")
+    domain = st.selectbox("Select Domain", [
+        "🎓 General",
+        "⚕️ Medical",
+        "⚖️ Legal",
+        "💻 Computer Science",
+        "📈 Finance",
+        "🔬 Research"
+    ])
+
+    domain_prompts = {
+        "🎓 General": "You are a helpful assistant. Answer questions based on the provided document context accurately and concisely.",
+        "⚕️ Medical": "You are a medical expert assistant. Answer questions based on medical documents with clinical precision. Always mention if information needs professional medical verification.",
+        "⚖️ Legal": "You are a legal expert assistant. Answer questions based on legal documents with precise terminology. Always mention that this is not legal advice and professional consultation is recommended.",
+        "💻 Computer Science": "You are a computer science expert. Answer technical questions with code examples where relevant. Explain algorithms, data structures, and programming concepts clearly.",
+        "📈 Finance": "You are a financial expert assistant. Answer questions based on financial documents with accuracy. Always mention that this is not financial advice.",
+        "🔬 Research": "You are a research assistant. Answer questions based on research documents with academic precision. Cite relevant sections and maintain scholarly tone."
+    }
+    selected_prompt = domain_prompts[domain]
 
     # Storage Selection
     st.markdown("## 💾 Storage")
@@ -401,7 +422,7 @@ else:
                 response = st.session_state.client.chat.completions.create(
                     model=model,
                     messages=[
-                        {"role": "system", "content": "Answer based on document context only."},
+                        {"role": "system", "content": selected_prompt},
                         {"role": "user", "content": prompt}
                     ],
                     temperature=0.3,
