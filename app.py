@@ -53,7 +53,7 @@ if authentication_status == False:
 
 elif authentication_status == None:
     st.warning("⚠️ Username aur Password daalo!")
-    st.info("Demo accounts: mamta/mamta123, guest/guest123")
+    st.info("Login: mamta / admin / guest — Password: ragify123")
     st.stop()
 
 elif authentication_status:
