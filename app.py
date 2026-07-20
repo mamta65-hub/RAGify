@@ -23,10 +23,7 @@ if not st.session_state.logged_in:
             st.session_state.current_user = USERS[username]["name"]
             st.rerun()
         else:
-            st.error("❌ Galat username ya password!")
-    st.markdown("---")
-    st.info("Demo: mamta/mamta123 | admin/admin123 | guest/guest123")
-    st.markdown('</div>', unsafe_allow_html=True)
+            st.error("❌ Wrong username or password")
     st.stop()
     st.sidebar.success("✅ Welcome, " + st.session_state.current_user + "!")
     if st.sidebar.button("🚪 Logout"):
