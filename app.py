@@ -317,7 +317,7 @@ else:
         with st.expander("📋 Document Summary", expanded=False):
             st.write(st.session_state.summary)
 
-    tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "📝 Quiz Generator", "🃏 Flashcards", "📊 Model Comparison"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["💬 Chat", "📝 Quiz Generator", "🃏 Flashcards", "📊 Model Comparison", "🔬 Chunking Analysis"])
 
     with tab1:
         st.markdown("### 💬 Conversation")
@@ -487,3 +487,97 @@ else:
                             st.success(resp.choices[0].message.content)
                         except Exception as e:
                             st.error(m + ": " + str(e))
+    with tab5:
+        st.markdown("### 🔬 Chunking Strategy Comparison")
+        st.write("Compare different chunking strategies and their impact on retrieval quality!")
+
+        compare_question = st.text_input(
+            "Test Question:",
+            placeholder="What is binary search?",
+            key="chunk_compare_q"
+        )
+
+        if st.button("🔬 Run Chunking Analysis", type="primary"):
+            if not compare_question:
+                st.warning("Please enter a test question!")
+            elif not st.session_state.all_chunks:
+                st.warning("Please upload and process a PDF first!")
+            else:
+                with st.spinner("Running analysis on 3 strategies..."):
+                    sample_text = " ".join([c.page_content for c in st.session_state.all_chunks[:20]])
+
+                    strategies = [
+                        {"name": "Small Chunks", "size": 200, "overlap": 20, "emoji": "🔹"},
+                        {"name": "Medium Chunks", "size": 500, "overlap": 50, "emoji": "🔷"},
+                        {"name": "Large Chunks", "size": 1000, "overlap": 100, "emoji": "🔵"},
+                    ]
+
+                    results = []
+                    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+                    for strategy in strategies:
+                        from langchain_core.documents import Document
+                        splitter = RecursiveCharacterTextSplitter(
+                            chunk_size=strategy["size"],
+                            chunk_overlap=strategy["overlap"]
+                        )
+                        doc = Document(page_content=sample_text, metadata={"source": "test"})
+                        chunks = splitter.split_documents([doc])
+                        vs = FAISS.from_documents(chunks, embeddings)
+                        retrieved = vs.similarity_search(compare_question, k=3)
+                        context = "\n".join([d.page_content for d in retrieved])
+                        resp = st.session_state.client.chat.completions.create(
+                            model=model,
+                            messages=[{"role": "user", "content": "Answer briefly:\n" + context + "\n\nQ: " + compare_question + "\nA:"}],
+                            max_tokens=150
+                        )
+                        answer = resp.choices[0].message.content
+                        score_docs = vs.similarity_search_with_score(compare_question, k=3)
+                        scores = [s for _, s in score_docs]
+                        avg_score = sum(scores) / len(scores)
+                        retrieval_quality = round((1 - min(avg_score, 1)) * 100, 1)
+
+                        results.append({
+                            "strategy": strategy["emoji"] + " " + strategy["name"],
+                            "chunk_size": strategy["size"],
+                            "num_chunks": len(chunks),
+                            "answer": answer,
+                            "retrieval_quality": retrieval_quality,
+                            "avg_distance": round(avg_score, 3)
+                        })
+
+                st.markdown("### 📊 Results")
+                col1, col2, col3 = st.columns(3)
+                cols = [col1, col2, col3]
+
+                best_quality = max(results, key=lambda x: x["retrieval_quality"])
+
+                for i, result in enumerate(results):
+                    with cols[i]:
+                        is_best = result["strategy"] == best_quality["strategy"]
+                        if is_best:
+                            st.success("🏆 BEST STRATEGY")
+                        st.markdown("**" + result["strategy"] + "**")
+                        st.metric("Chunk Size", str(result["chunk_size"]) + " chars")
+                        st.metric("Total Chunks", result["num_chunks"])
+                        st.metric("Retrieval Quality", str(result["retrieval_quality"]) + "%")
+                        st.metric("Avg Distance", result["avg_distance"])
+                        with st.expander("📝 Answer"):
+                            st.write(result["answer"])
+
+                st.markdown("---")
+                st.markdown("### 📈 Summary Table")
+
+                import pandas as pd
+                df = pd.DataFrame([{
+                    "Strategy": r["strategy"],
+                    "Chunk Size": r["chunk_size"],
+                    "Total Chunks": r["num_chunks"],
+                    "Retrieval Quality %": r["retrieval_quality"],
+                    "Avg Distance": r["avg_distance"]
+                } for r in results])
+                st.dataframe(df, use_container_width=True)
+
+                best = max(results, key=lambda x: x["retrieval_quality"])
+                st.success("🏆 Best Strategy: **" + best["strategy"] + "** with " + str(best["retrieval_quality"]) + "% retrieval quality!")
+                st.info("💡 Research Insight: " + best["strategy"] + " performs best for this document type. This finding can be included in your research paper!")
