@@ -37,7 +37,7 @@ authenticator = stauth.Authenticate(
     users["cookie"]["expiry_days"]
 )
 
-name, authentication_status, username = authenticator.login("🔐 RAGify Login", "main")
+name, authentication_status, username = authenticator.login(location="main")
 
 if authentication_status == False:
     st.error("❌ Username/Password galat hai!")
