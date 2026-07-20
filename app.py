@@ -1,4 +1,56 @@
 import streamlit as st
+import streamlit_authenticator as stauth
+import yaml
+
+# ── AUTH SETUP ──
+users = {
+    "credentials": {
+        "usernames": {
+            "mamta": {
+                "email": "mamta@ragify.com",
+                "name": "Mamta",
+                "password": stauth.Hasher(["mamta123"]).generate()[0]
+            },
+            "admin": {
+                "email": "admin@ragify.com",
+                "name": "Admin",
+                "password": stauth.Hasher(["admin123"]).generate()[0]
+            },
+            "guest": {
+                "email": "guest@ragify.com",
+                "name": "Guest",
+                "password": stauth.Hasher(["guest123"]).generate()[0]
+            }
+        }
+    },
+    "cookie": {
+        "expiry_days": 30,
+        "key": "ragify_secret_key",
+        "name": "ragify_cookie"
+    }
+}
+
+authenticator = stauth.Authenticate(
+    users["credentials"],
+    users["cookie"]["name"],
+    users["cookie"]["key"],
+    users["cookie"]["expiry_days"]
+)
+
+name, authentication_status, username = authenticator.login("🔐 RAGify Login", "main")
+
+if authentication_status == False:
+    st.error("❌ Username/Password galat hai!")
+    st.stop()
+
+elif authentication_status == None:
+    st.warning("⚠️ Username aur Password daalo!")
+    st.info("Demo accounts: mamta/mamta123, guest/guest123")
+    st.stop()
+
+elif authentication_status:
+    authenticator.logout("🚪 Logout", "sidebar")
+    st.sidebar.success("✅ Welcome, " + name + "!")
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
