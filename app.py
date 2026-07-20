@@ -1,64 +1,38 @@
 import streamlit as st
-import streamlit_authenticator as stauth
-import yaml
 
-# ── AUTH SETUP ──
-users = {
-    "credentials": {
-        "usernames": {
-            "mamta": {
-                "email": "mamta@ragify.com",
-                "name": "Mamta",
-                "password": "$2b$12$TlDiMIcMPkGXXXXXXXXXXXe8K9mLrqGXXXXXXXXXXXX"
-            },
-            "admin": {
-                "email": "admin@ragify.com",
-                "name": "Admin",
-                "password": "$2b$12$TlDiMIcMPkGXXXXXXXXXXXe8K9mLrqGXXXXXXXXXXXX"
-            },
-            "guest": {
-                "email": "guest@ragify.com",
-                "name": "Guest",
-                "password": "$2b$12$TlDiMIcMPkGXXXXXXXXXXXe8K9mLrqGXXXXXXXXXXXX"
-            }
-        }
-    },
-    "cookie": {
-        "expiry_days": 30,
-        "key": "ragify_secret_key",
-        "name": "ragify_cookie"
-    }
+# ── SIMPLE CUSTOM AUTH ──
+USERS = {
+    "mamta": {"password": "mamta123", "name": "Mamta"},
+    "admin": {"password": "admin123", "name": "Admin"},
+    "guest": {"password": "guest123", "name": "Guest"}
 }
 
-authenticator = stauth.Authenticate(
-    users["credentials"],
-    users["cookie"]["name"],
-    users["cookie"]["key"],
-    users["cookie"]["expiry_days"]
-)
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "current_user" not in st.session_state:
+    st.session_state.current_user = ""
 
-auth_result = authenticator.login(location="main")
-if auth_result is not None:
-    name = auth_result.get("name", "")
-    authentication_status = auth_result.get("authentication_status", None)
-    username = auth_result.get("username", "")
-else:
-    name = None
-    authentication_status = None
-    username = None
-
-if authentication_status == False:
-    st.error("❌ Username/Password galat hai!")
+if not st.session_state.logged_in:
+    st.markdown('<div style="max-width:400px;margin:100px auto;padding:2rem;border-radius:15px;box-shadow:0 4px 20px rgba(0,0,0,0.1);background:white">', unsafe_allow_html=True)
+    st.markdown("## 🔐 RAGify Login")
+    username = st.text_input("👤 Username")
+    password = st.text_input("🔑 Password", type="password")
+    if st.button("Login →", type="primary", use_container_width=True):
+        if username in USERS and USERS[username]["password"] == password:
+            st.session_state.logged_in = True
+            st.session_state.current_user = USERS[username]["name"]
+            st.rerun()
+        else:
+            st.error("❌ Galat username ya password!")
+    st.markdown("---")
+    st.info("Demo: mamta/mamta123 | admin/admin123 | guest/guest123")
+    st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
-
-elif authentication_status == None:
-    st.warning("⚠️ Username aur Password daalo!")
-    st.info("Login: mamta / admin / guest — Password: ragify123")
-    st.stop()
-
-elif authentication_status:
-    authenticator.logout("🚪 Logout", "sidebar")
-    st.sidebar.success("✅ Welcome, " + name + "!")
+    st.sidebar.success("✅ Welcome, " + st.session_state.current_user + "!")
+    if st.sidebar.button("🚪 Logout"):
+       st.session_state.logged_in = False
+       st.session_state.current_user = ""
+       st.rerun()
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
