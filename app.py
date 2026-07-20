@@ -569,6 +569,7 @@ else:
                 st.markdown("### 📈 Summary Table")
 
                 import pandas as pd
+                pd.set_option('display.max_colwidth', None)
                 df = pd.DataFrame([{
                     "Strategy": r["strategy"],
                     "Chunk Size": r["chunk_size"],
