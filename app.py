@@ -504,7 +504,7 @@ else:
                 st.warning("Please upload and process a PDF first!")
             else:
                 with st.spinner("Running analysis on 3 strategies..."):
-                    sample_text = " ".join([c.page_content for c in st.session_state.all_chunks[:20]])
+                    sample_text = " ".join([c.page_content for c in st.session_state.all_chunks[:50]])
 
                     strategies = [
                         {"name": "Small Chunks", "size": 200, "overlap": 20, "emoji": "🔹"},
@@ -535,7 +535,10 @@ else:
                         score_docs = vs.similarity_search_with_score(compare_question, k=3)
                         scores = [s for _, s in score_docs]
                         avg_score = sum(scores) / len(scores)
-                        retrieval_quality = round((1 - min(avg_score, 1)) * 100, 1)
+                        if avg_score < 1:
+                             retrieval_quality = round((1 - avg_score) * 100, 1)
+                        else:
+                             retrieval_quality = round((1 / avg_score) * 100, 1)
 
                         results.append({
                             "strategy": strategy["emoji"] + " " + strategy["name"],
