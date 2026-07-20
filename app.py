@@ -9,17 +9,17 @@ users = {
             "mamta": {
                 "email": "mamta@ragify.com",
                 "name": "Mamta",
-                "password": stauth.Hasher(["mamta123"]).generate()[0]
+                "password": "$2b$12$TlDiMIcMPkGXXXXXXXXXXXe8K9mLrqGXXXXXXXXXXXX"
             },
             "admin": {
                 "email": "admin@ragify.com",
                 "name": "Admin",
-                "password": stauth.Hasher(["admin123"]).generate()[0]
+                "password": "$2b$12$TlDiMIcMPkGXXXXXXXXXXXe8K9mLrqGXXXXXXXXXXXX"
             },
             "guest": {
                 "email": "guest@ragify.com",
                 "name": "Guest",
-                "password": stauth.Hasher(["guest123"]).generate()[0]
+                "password": "$2b$12$TlDiMIcMPkGXXXXXXXXXXXe8K9mLrqGXXXXXXXXXXXX"
             }
         }
     },
