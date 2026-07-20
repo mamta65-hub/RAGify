@@ -16,4 +16,5 @@ requests
 beautifulsoup4
 pinecone-client
 langchain-pinecone
-streamlit-authenticator
+pandas
+numpy
