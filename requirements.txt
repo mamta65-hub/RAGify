@@ -13,7 +13,7 @@ streamlit-mic-recorder
 pytesseract
 Pillow
 requests
-beautifulsoup
+beautifulsoup4
 pinecone
 langchain-pinecone
 pandas
