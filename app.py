@@ -173,7 +173,7 @@ with st.sidebar:
         st.rerun()
     lang = st.selectbox("🌐 Answer Language", ["English", "Hindi", "Hinglish"])
     st.session_state.answer_lang = lang
-        model = st.selectbox("🤖 LLM Model", [
+    model = st.selectbox("🤖 LLM Model", [
         "openai/gpt-oss-20b",
         "openai/gpt-oss-120b"
     ])        
@@ -485,7 +485,7 @@ else:
         compare_q = st.text_input("Question:", placeholder="What is binary search?")
         models_to_compare = st.multiselect(
             "Select models:",
-                        ["openai/gpt-oss-20b", "openai/gpt-oss-120b"],
+            ["openai/gpt-oss-20b", "openai/gpt-oss-120b"],
             default=["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
         )
         if st.button("🔄 Compare", type="primary") and compare_q and models_to_compare:
