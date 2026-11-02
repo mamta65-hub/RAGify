@@ -14,7 +14,7 @@ pytesseract
 Pillow
 requests
 beautifulsoup
-langchain-pinecone
 pinecone
+langchain-pinecone
 pandas
 numpy
